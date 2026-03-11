@@ -33,14 +33,17 @@ class PetPage extends StatelessWidget {
           final progress = _levelProgress(user.level, user.xp, gameConfig);
           final availableSpecies = _availableSpecies(gameConfig, user.streak);
 
-          return StreamBuilder<List<Inventory>>(
+          return StreamBuilder<List<InventoryData>>(
             stream: dao.watchInventory(userId),
             builder: (context, invSnap) {
-              final inventory = invSnap.data ?? const <Inventory>[];
-              final equipped = inventory.cast<Inventory?>().firstWhere(
-                    (e) => e?.equipped == true,
-                    orElse: () => null,
-                  );
+              final inventory = invSnap.data ?? const <InventoryData>[];
+              InventoryData? equipped;
+              for (final item in inventory) {
+                if (item.equipped) {
+                  equipped = item;
+                  break;
+                }
+              }
 
               return ListView(
                 padding: const EdgeInsets.all(18),
@@ -61,7 +64,7 @@ class PetPage extends StatelessWidget {
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color: Theme.of(context).colorScheme.primary.withOpacity(0.12),
+                                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
                                       borderRadius: BorderRadius.circular(999),
                                     ),
                                     child: Text(
@@ -135,7 +138,6 @@ class PetPage extends StatelessWidget {
                   ...availableSpecies.map(
                     (species) {
                       final selected = species['id'] == user.petId;
-                      final locked = species['locked'] == true && !availableSpecies.contains(species);
                       return Card(
                         child: ListTile(
                           leading: Text(_petEmoji(species['id']?.toString()), style: const TextStyle(fontSize: 28)),
@@ -144,15 +146,13 @@ class PetPage extends StatelessWidget {
                           trailing: selected
                               ? const Icon(Icons.check_circle, color: Colors.green)
                               : FilledButton.tonal(
-                                  onPressed: locked
-                                      ? null
-                                      : () async {
-                                          await dao.updateUserPet(userId, species['id'].toString());
-                                          if (!context.mounted) return;
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(content: Text('已切换为 ${species['name']}')),
-                                          );
-                                        },
+                                  onPressed: () async {
+                                    await dao.updateUserPet(userId, species['id'].toString());
+                                    if (!context.mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('已切换为 ${species['name']}')),
+                                    );
+                                  },
                                   child: const Text('切换'),
                                 ),
                         ),
@@ -411,10 +411,13 @@ String _inventoryDisplayName(Map<String, dynamic> gameConfig, String itemId) {
 }
 
 String _itemVisualBadge(Map<String, dynamic> gameConfig, String itemId) {
-  final item = _shopItems(gameConfig).cast<_ShopItem?>().firstWhere(
-        (e) => e?.id == itemId,
-        orElse: () => null,
-      );
+  _ShopItem? item;
+  for (final candidate in _shopItems(gameConfig)) {
+    if (candidate.id == itemId) {
+      item = candidate;
+      break;
+    }
+  }
   if (item == null) return '✨';
   switch (item.type) {
     case 'hat':
