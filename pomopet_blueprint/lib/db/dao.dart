@@ -48,14 +48,14 @@ class PomopetDao {
     );
   }
 
-  Future<List<Inventory>> listInventory(int userId) {
+  Future<List<InventoryData>> listInventory(int userId) {
     return (db.select(db.inventory)
           ..where((i) => i.userId.equals(userId))
           ..orderBy([(i) => OrderingTerm.desc(i.createdAt)]))
         .get();
   }
 
-  Stream<List<Inventory>> watchInventory(int userId) {
+  Stream<List<InventoryData>> watchInventory(int userId) {
     return (db.select(db.inventory)
           ..where((i) => i.userId.equals(userId))
           ..orderBy([(i) => OrderingTerm.desc(i.createdAt)]))
@@ -117,14 +117,14 @@ class PomopetDao {
     });
   }
 
-  Future<Inventory?> getEquippedItem(int userId) {
+  Future<InventoryData?> getEquippedItem(int userId) {
     return (db.select(db.inventory)
           ..where((i) => i.userId.equals(userId) & i.equipped.equals(true))
           ..limit(1))
         .getSingleOrNull();
   }
 
-  Stream<Inventory?> watchEquippedItem(int userId) {
+  Stream<InventoryData?> watchEquippedItem(int userId) {
     return (db.select(db.inventory)
           ..where((i) => i.userId.equals(userId) & i.equipped.equals(true))
           ..limit(1))
@@ -147,7 +147,7 @@ class PomopetDao {
 
   Future<void> setSetting(String key, String value) async {
     await db.into(db.appSettings).insertOnConflictUpdate(
-          AppSettingCompanion.insert(
+          AppSettingsCompanion.insert(
             key: key,
             value: value,
             updatedAt: Value(DateTime.now()),
@@ -192,14 +192,14 @@ class PomopetDao {
   // Tasks
   // -------------------
 
-  Stream<List<Task>> watchVisibleTasks() {
+  Stream<List<TaskData>> watchVisibleTasks() {
     return (db.select(db.tasks)
           ..where((t) => t.status.equals('active') | t.status.equals('paused'))
           ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
         .watch();
   }
 
-  Future<List<Task>> listVisibleTasks() {
+  Future<List<TaskData>> listVisibleTasks() {
     return (db.select(db.tasks)
           ..where((t) => t.status.equals('active') | t.status.equals('paused'))
           ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
