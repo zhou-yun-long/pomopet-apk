@@ -82,22 +82,27 @@ YAML
 if [ -f android/app/build.gradle.kts ]; then
 python3 - <<'PY'
 from pathlib import Path
+import re
+
 p = Path('android/app/build.gradle.kts')
 text = p.read_text(encoding='utf-8')
 
-if 'coreLibraryDesugaringEnabled = true' not in text:
-    text = text.replace(
-        '        sourceCompatibility = JavaVersion.VERSION_11\n        targetCompatibility = JavaVersion.VERSION_11',
-        '        sourceCompatibility = JavaVersion.VERSION_11\n        targetCompatibility = JavaVersion.VERSION_11\n        isCoreLibraryDesugaringEnabled = true'
+if 'coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:' not in text:
+    text = re.sub(
+        r'dependencies\s*\{',
+        'dependencies {\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")',
+        text,
+        count=1,
     )
 
-if 'coreLibraryDesugaring(' not in text:
-    text = text.replace(
-        'dependencies {\n',
-        'dependencies {\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")\n'
-    )
+if 'isCoreLibraryDesugaringEnabled = true' not in text and 'coreLibraryDesugaringEnabled = true' not in text:
+    m = re.search(r'compileOptions\s*\{', text)
+    if m:
+        insert_at = m.end()
+        text = text[:insert_at] + '\n        isCoreLibraryDesugaringEnabled = true' + text[insert_at:]
 
 p.write_text(text, encoding='utf-8')
+print(text)
 PY
 fi
 
