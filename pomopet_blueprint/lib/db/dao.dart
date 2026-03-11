@@ -192,14 +192,14 @@ class PomopetDao {
   // Tasks
   // -------------------
 
-  Stream<List<Task>> watchVisibleTasks() {
+  Stream<List<TaskData>> watchVisibleTasks() {
     return (db.select(db.tasks)
           ..where((t) => t.status.equals('active') | t.status.equals('paused'))
           ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
         .watch();
   }
 
-  Future<List<Task>> listVisibleTasks() {
+  Future<List<TaskData>> listVisibleTasks() {
     return (db.select(db.tasks)
           ..where((t) => t.status.equals('active') | t.status.equals('paused'))
           ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))

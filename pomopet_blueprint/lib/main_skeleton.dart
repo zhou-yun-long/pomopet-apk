@@ -20,7 +20,7 @@ Future<void> main() async {
   final existingUser = await (runtime.db.select(runtime.db.users)..limit(1)).getSingleOrNull();
   final userId = existingUser?.id ??
       await runtime.db.into(runtime.db.users).insert(
-            UsersCompanion.insert(petId: const Value('lobster')),
+            const UsersCompanion.insert(petId: Value('lobster')),
           );
 
   runApp(PomopetApp(

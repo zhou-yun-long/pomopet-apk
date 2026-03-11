@@ -69,7 +69,7 @@ class _LogCompletionSheetState extends State<LogCompletionSheet> {
       child: FutureBuilder(
         future: widget.dao.listVisibleTasks(),
         builder: (context, snapshot) {
-          final tasks = snapshot.data ?? const <Task>[];
+          final tasks = snapshot.data ?? const <TaskData>[];
           _taskId ??= tasks.isNotEmpty ? tasks.first.id : null;
 
           return Column(
