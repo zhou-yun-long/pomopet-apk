@@ -1,3 +1,5 @@
+import 'package:drift/drift.dart';
+
 import '../db/app_db.dart';
 import '../db/dao.dart';
 
