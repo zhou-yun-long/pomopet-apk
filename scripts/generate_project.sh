@@ -5,6 +5,10 @@ PROJECT_NAME=${1:-pomopet}
 OUT_DIR=${2:-$PWD/_app}
 BLUEPRINT_DIR=${3:-$PWD/pomopet_blueprint}
 
+# Resolve to absolute paths early, before changing directory.
+OUT_DIR=$(python3 -c 'import os,sys; print(os.path.abspath(sys.argv[1]))' "$OUT_DIR")
+BLUEPRINT_DIR=$(python3 -c 'import os,sys; print(os.path.abspath(sys.argv[1]))' "$BLUEPRINT_DIR")
+
 rm -rf "$OUT_DIR"
 mkdir -p "$(dirname "$OUT_DIR")"
 
@@ -17,6 +21,9 @@ mv "$TMP_DIR/$PROJECT_NAME" "$OUT_DIR"
 
 cd "$OUT_DIR"
 mkdir -p assets/config
+
+echo "[pomopet] blueprint dir: $BLUEPRINT_DIR"
+ls -la "$BLUEPRINT_DIR" || true
 
 # Inject blueprint
 cp -r "$BLUEPRINT_DIR/lib"/* lib/
@@ -35,25 +42,20 @@ pub = Path('pubspec.yaml')
 lines = pub.read_text(encoding='utf-8').splitlines(True)
 
 def insert_block(key: str, block_lines: list[str]):
-    # Find top-level key line like 'dependencies:'
     try:
         i = next(idx for idx,l in enumerate(lines) if l.strip() == f'{key}:')
     except StopIteration:
         return False
-    # Find end of this section: next non-indented top-level key (col 0, endswith ':')
     j = i + 1
     while j < len(lines):
         l = lines[j]
         if l and not l.startswith(' ') and l.rstrip().endswith(':'):
             break
         j += 1
-    # Insert before j
-    # Ensure block lines end with '\n'
     ins = [bl if bl.endswith('\n') else bl+'\n' for bl in block_lines]
     lines[j:j] = ins
     return True
 
-# Add dependencies (do not duplicate if already present)
 need_deps = {
   'drift': '^2.18.0',
   'drift_flutter': '^0.1.0',
@@ -87,7 +89,6 @@ if dep_block:
 if dev_block:
     insert_block('dev_dependencies', dev_block)
 
-# Ensure assets listed under flutter:
 assets = [
   '    - assets/config/manifest.json',
   '    - assets/config/strings_zh.json',
@@ -96,16 +97,12 @@ assets = [
   '    - assets/config/timer_presets.json',
 ]
 
-# Find flutter: section
 try:
     fi = next(idx for idx,l in enumerate(lines) if l.strip() == 'flutter:')
 except StopIteration:
-    # Append at end
     lines.append('\nflutter:\n')
     fi = len(lines)-1
 
-# Determine if assets: exists within flutter section
-# Flutter section ends at next top-level key
 fj = fi + 1
 while fj < len(lines):
     l = lines[fj]
@@ -115,14 +112,11 @@ while fj < len(lines):
 
 flutter_text = ''.join(lines[fi:fj])
 if '  assets:' not in flutter_text:
-    # Insert assets after flutter: line
     insert_at = fi + 1
     lines[insert_at:insert_at] = ['  assets:\n'] + [a+'\n' for a in assets]
 else:
-    # Append missing asset entries
     for a in assets:
         if a not in flutter_text:
-            # Insert before flutter section end
             lines[fj:fj] = [a+'\n']
             fj += 1
 
