@@ -65,7 +65,7 @@ class PomopetTheme {
         bodyMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: text),
         bodySmall: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: subText),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: card,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -87,7 +87,7 @@ class PomopetTheme {
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
           textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
         ).copyWith(
-          overlayColor: WidgetStateProperty.all(primaryDeep.withOpacity(0.12)),
+          overlayColor: WidgetStateProperty.all(primaryDeep.withValues(alpha: 0.12)),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
