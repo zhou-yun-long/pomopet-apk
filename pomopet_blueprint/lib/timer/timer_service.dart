@@ -47,7 +47,7 @@ class TimerService {
       payload: const <String, dynamic>{},
       paused: false,
     );
-    await Notifications.scheduleFinish(sessionId: id, at: endAt, payload: const {'kind': 'timer_finish'});
+    await Notifications.scheduleFinish(sessionId: id, at: endAt, payload: <String, dynamic>{'kind': 'timer_finish', 'sessionId': id});
 
     return id;
   }
@@ -101,7 +101,7 @@ class TimerService {
       payload: const <String, dynamic>{},
       paused: false,
     );
-    await Notifications.scheduleFinish(sessionId: sessionId, at: endAt, payload: const {'kind': 'timer_finish'});
+    await Notifications.scheduleFinish(sessionId: sessionId, at: endAt, payload: <String, dynamic>{'kind': 'timer_finish', 'sessionId': sessionId});
   }
 
   Future<void> stop(String sessionId) async {

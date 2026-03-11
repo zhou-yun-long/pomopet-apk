@@ -6,6 +6,7 @@ import '../../db/dao.dart';
 import '../../services/reward_service.dart';
 import '../dialogs/level_up_dialog.dart';
 import '../sheets/log_completion_sheet.dart';
+import 'select_task_sheet.dart';
 import '../../utils/day_cutoff.dart';
 import 'tomato_progress_ring.dart';
 
@@ -77,8 +78,17 @@ class _TimerPageState extends State<TimerPage> {
                               );
                               if (res == null) return;
 
-                              // Compute logical date using dayCutoff.
-                              final cutoff = (widget.gameConfig['defaults']?['dayCutoff'] as String?) ?? '00:00';
+                              if (res.taskId == null) {
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('请先选择一个任务再入账')),
+                                );
+                                return;
+                              }
+
+                              final cutoff = await widget.dao.getSetting('dayCutoff') ??
+                                  (widget.gameConfig['defaults']?['dayCutoff'] as String?) ??
+                                  '00:00';
                               final date = logicalDate(DateTime.now(), cutoff: cutoff);
                               final before = await (widget.dao.db.select(widget.dao.db.users)
                                     ..where((u) => u.id.equals(widget.userId)))
@@ -89,10 +99,11 @@ class _TimerPageState extends State<TimerPage> {
                                 rewards: widget.rewards,
                                 game: widget.gameConfig,
                                 userId: widget.userId,
-                                taskId: res.taskId,
+                                taskId: res.taskId!,
                                 dateYYYYMMDD: date,
                                 minutes: res.minutes,
                                 source: 'timer',
+                                dao: widget.dao,
                               );
 
                               final after = await (widget.dao.db.select(widget.dao.db.users)
@@ -129,8 +140,11 @@ class _TimerPageState extends State<TimerPage> {
                       child: FilledButton(
                         onPressed: () async {
                           if (s == null) {
+                            final sel = await SelectTaskSheet.show(context, dao: widget.dao);
+                            if (sel == null) return;
                             await widget.timer.startFocus(
                               userId: widget.userId,
+                              taskId: sel.taskId,
                               presetId: 'classic_25_5',
                               focusMinutes: 25,
                             );

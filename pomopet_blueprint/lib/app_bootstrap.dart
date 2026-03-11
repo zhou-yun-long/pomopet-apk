@@ -75,17 +75,22 @@ Future<PomopetRuntime> bootstrapPomopet() async {
               defaultMinutes: planned,
             );
             if (res != null) {
-              final cutoff = (config.game['defaults']?['dayCutoff'] as String?) ?? '00:00';
+              if (res.taskId == null) return;
+
+              final cutoff = await dao.getSetting('dayCutoff') ??
+                  (config.game['defaults']?['dayCutoff'] as String?) ??
+                  '00:00';
               final date = logicalDate(DateTime.now(), cutoff: cutoff);
               await logCompletionTx(
                 db: db,
                 rewards: rewards,
                 game: config.game,
                 userId: 1,
-                taskId: res.taskId,
+                taskId: res.taskId!,
                 dateYYYYMMDD: date,
                 minutes: res.minutes,
                 source: 'timer',
+                dao: dao,
               );
             }
           }

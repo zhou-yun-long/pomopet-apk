@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart';
 import 'package:flutter/material.dart';
 
 import 'app_bootstrap.dart';
@@ -6,7 +7,7 @@ import 'config/config_loader.dart';
 import 'db/dao.dart';
 import 'services/reward_service.dart';
 import 'theme/pomopet_theme.dart';
-import 'ui/timer/timer_page.dart';
+import 'ui/home/home_page.dart';
 
 /// Minimal runnable skeleton (paste into a real Flutter project main.dart).
 ///
@@ -15,7 +16,6 @@ Future<void> main() async {
   final runtime = await bootstrapPomopet();
   final config = await ConfigLoader().loadAssets();
 
-  // Ensure a default user row exists.
   final existingUser = await (runtime.db.select(runtime.db.users)..limit(1)).getSingleOrNull();
   final userId = existingUser?.id ??
       await runtime.db.into(runtime.db.users).insert(
@@ -49,16 +49,25 @@ class PomopetApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: pomopetNavKey,
-      theme: PomopetTheme.light(),
-      home: TimerPage(
-        dao: dao,
-        timer: timer,
-        rewards: rewards,
-        gameConfig: gameConfig,
-        userId: userId,
-      ),
+    return StreamBuilder<String?>(
+      stream: dao.watchSetting('theme'),
+      builder: (context, snapshot) {
+        final themeId = snapshot.data ??
+            (gameConfig['defaults']?['theme'] as String?) ??
+            'tomato_strong';
+
+        return MaterialApp(
+          navigatorKey: pomopetNavKey,
+          theme: PomopetTheme.byId(themeId),
+          home: HomePage(
+            dao: dao,
+            timer: timer,
+            rewards: rewards,
+            gameConfig: gameConfig,
+            userId: userId,
+          ),
+        );
+      },
     );
   }
 }

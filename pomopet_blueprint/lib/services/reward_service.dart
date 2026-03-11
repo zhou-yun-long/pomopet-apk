@@ -1,4 +1,5 @@
 import '../db/app_db.dart';
+import '../db/dao.dart';
 
 class Reward {
   final int xp;
@@ -70,6 +71,7 @@ Future<Reward> logCompletionTx({
   required int minutes,
   required String source,
   String? attachmentPath,
+  PomopetDao? dao,
 }) async {
   final reward = rewards.calc(minutes: minutes, source: source, game: game);
 
@@ -96,6 +98,9 @@ Future<Reward> logCompletionTx({
       ),
     );
   });
+
+  final effectiveDao = dao ?? PomopetDao(db);
+  await effectiveDao.syncUserStreak(userId: userId, dateYYYYMMDD: dateYYYYMMDD);
 
   return reward;
 }
