@@ -6,6 +6,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      ANDROID_HOME: /usr/local/lib/android/sdk
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -15,6 +18,14 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+
+      - name: Setup Android SDK tools
+        uses: android-actions/setup-android@v3
+
+      - name: Accept Android licenses
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager --list | head -n 20 || true
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -27,10 +38,6 @@ jobs:
         run: |
           flutter config --enable-android
           flutter doctor -v
-
-      - name: Accept Android licenses
-        run: |
-          yes | flutter doctor --android-licenses
 
       - name: Generate project + inject blueprint
         run: |
