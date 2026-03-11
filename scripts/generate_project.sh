@@ -78,5 +78,28 @@ flutter:
     - assets/config/timer_presets.json
 YAML
 
+# Patch Android build for flutter_local_notifications (core library desugaring).
+if [ -f android/app/build.gradle.kts ]; then
+python3 - <<'PY'
+from pathlib import Path
+p = Path('android/app/build.gradle.kts')
+text = p.read_text(encoding='utf-8')
+
+if 'coreLibraryDesugaringEnabled = true' not in text:
+    text = text.replace(
+        '        sourceCompatibility = JavaVersion.VERSION_11\n        targetCompatibility = JavaVersion.VERSION_11',
+        '        sourceCompatibility = JavaVersion.VERSION_11\n        targetCompatibility = JavaVersion.VERSION_11\n        isCoreLibraryDesugaringEnabled = true'
+    )
+
+if 'coreLibraryDesugaring(' not in text:
+    text = text.replace(
+        'dependencies {\n',
+        'dependencies {\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")\n'
+    )
+
+p.write_text(text, encoding='utf-8')
+PY
+fi
+
 flutter pub get
 flutter pub run build_runner build --delete-conflicting-outputs
