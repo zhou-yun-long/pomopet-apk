@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'app_bootstrap.dart';
 import 'app_nav.dart';
 import 'config/config_loader.dart';
+import 'db/app_db.dart';
 import 'db/dao.dart';
 import 'services/reward_service.dart';
 import 'theme/pomopet_theme.dart';
@@ -19,7 +20,7 @@ Future<void> main() async {
   final existingUser = await (runtime.db.select(runtime.db.users)..limit(1)).getSingleOrNull();
   final userId = existingUser?.id ??
       await runtime.db.into(runtime.db.users).insert(
-            runtime.db.users.companion.insert(petId: const Value('lobster')),
+            const UsersCompanion.insert(petId: Value('lobster')),
           );
 
   runApp(PomopetApp(
