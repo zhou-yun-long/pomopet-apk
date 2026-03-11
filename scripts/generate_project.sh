@@ -34,6 +34,9 @@ if [ -f lib/main_skeleton.dart ]; then
   cp lib/main_skeleton.dart lib/main.dart
 fi
 
+# Remove default sample test that references MyApp.
+rm -f test/widget_test.dart
+
 echo "[pomopet] rewrite pubspec.yaml"
 cat > pubspec.yaml <<YAML
 name: ${PROJECT_NAME}
