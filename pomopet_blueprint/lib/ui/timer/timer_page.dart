@@ -1,0 +1,173 @@
+import 'package:flutter/material.dart';
+
+import '../../theme/pomopet_theme.dart';
+import '../../timer/timer_service.dart';
+import '../../db/dao.dart';
+import '../../services/reward_service.dart';
+import '../dialogs/level_up_dialog.dart';
+import '../sheets/log_completion_sheet.dart';
+import '../../utils/day_cutoff.dart';
+import 'tomato_progress_ring.dart';
+
+/// Minimal Timer page skeleton.
+///
+/// Wire real app state with Provider/Riverpod/Bloc as you like.
+class TimerPage extends StatefulWidget {
+  final PomopetDao dao;
+  final TimerService timer;
+  final RewardService rewards;
+  final Map<String, dynamic> gameConfig;
+  final int userId;
+
+  const TimerPage({
+    super.key,
+    required this.dao,
+    required this.timer,
+    required this.rewards,
+    required this.gameConfig,
+    required this.userId,
+  });
+
+  @override
+  State<TimerPage> createState() => _TimerPageState();
+}
+
+class _TimerPageState extends State<TimerPage> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('番茄钟')),
+      body: StreamBuilder(
+        stream: widget.dao.watchActiveSession(),
+        builder: (context, snapshot) {
+          final s = snapshot.data;
+          final now = DateTime.now();
+
+          final planned = s?.plannedMinutes ?? 25;
+          final endAt = s?.endAt ?? now.add(Duration(minutes: planned));
+          final remaining = endAt.difference(now).inSeconds;
+          final total = planned * 60;
+          final progress = total <= 0 ? 0.0 : (1.0 - (remaining / total)).clamp(0.0, 1.0);
+
+          return Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              children: [
+                const SizedBox(height: 8),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(18),
+                    child: Column(
+                      children: [
+                        TomatoProgressRing(progress: progress),
+                        const SizedBox(height: 18),
+                        Text(
+                          _mmss(remaining),
+                          style: const TextStyle(fontSize: 38, fontWeight: FontWeight.w900),
+                        ),
+                        const SizedBox(height: 12),
+                        if (s != null && s.status == 'finished')
+                          FilledButton(
+                            onPressed: () async {
+                              final res = await LogCompletionSheet.show(
+                                context,
+                                dao: widget.dao,
+                                title: '番茄完成！要入账吗？',
+                                defaultMinutes: s.plannedMinutes,
+                              );
+                              if (res == null) return;
+
+                              // Compute logical date using dayCutoff.
+                              final cutoff = (widget.gameConfig['defaults']?['dayCutoff'] as String?) ?? '00:00';
+                              final date = logicalDate(DateTime.now(), cutoff: cutoff);
+                              final before = await (widget.dao.db.select(widget.dao.db.users)
+                                    ..where((u) => u.id.equals(widget.userId)))
+                                  .getSingle();
+
+                              final reward = await logCompletionTx(
+                                db: widget.dao.db,
+                                rewards: widget.rewards,
+                                game: widget.gameConfig,
+                                userId: widget.userId,
+                                taskId: res.taskId,
+                                dateYYYYMMDD: date,
+                                minutes: res.minutes,
+                                source: 'timer',
+                              );
+
+                              final after = await (widget.dao.db.select(widget.dao.db.users)
+                                    ..where((u) => u.id.equals(widget.userId)))
+                                  .getSingle();
+
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('已入账：+${reward.xp} XP  +${reward.coin} 金币')),
+                              );
+
+                              if (after.level > before.level) {
+                                await showDialog(
+                                  context: context,
+                                  builder: (_) => LevelUpDialog(newLevel: after.level),
+                                );
+                              }
+                            },
+                            child: const Text('记为完成'),
+                          ),
+                        const SizedBox(height: 6),
+                        Text(
+                          s?.status == 'paused' ? '已暂停 · 点一下继续喂小兽' : '专注中 · 番茄味更强',
+                          style: const TextStyle(color: PomopetTheme.subText),
+                        )
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () async {
+                          if (s == null) {
+                            await widget.timer.startFocus(
+                              userId: widget.userId,
+                              presetId: 'classic_25_5',
+                              focusMinutes: 25,
+                            );
+                          } else if (s.status == 'paused') {
+                            await widget.timer.resume(s.id);
+                          } else {
+                            await widget.timer.pause(s.id);
+                          }
+                        },
+                        child: Text(s == null ? '开始专注' : (s.status == 'paused' ? '继续专注' : '暂停')),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: s == null
+                            ? null
+                            : () async {
+                                await widget.timer.stop(s.id);
+                              },
+                        child: const Text('结束本次'),
+                      ),
+                    )
+                  ],
+                )
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  String _mmss(int seconds) {
+    final s = seconds < 0 ? 0 : seconds;
+    final m = (s ~/ 60).toString().padLeft(2, '0');
+    final ss = (s % 60).toString().padLeft(2, '0');
+    return '$m:$ss';
+  }
+}

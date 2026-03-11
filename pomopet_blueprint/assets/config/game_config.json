@@ -1,0 +1,94 @@
+{
+  "version": "0.1.0",
+  "defaults": {
+    "mode": "mixed",
+    "dayCutoff": "00:00",
+    "theme": "tomato_strong"
+  },
+  "pet": {
+    "starterChoices": ["lobster", "cat", "dino"],
+    "starterHasBlindBox": true,
+    "species": [
+      { "id": "lobster", "name": "小龙虾" },
+      { "id": "cat", "name": "小猫" },
+      { "id": "dino", "name": "小恐龙" },
+      { "id": "penguin", "name": "小企鹅", "locked": true },
+      { "id": "rabbit", "name": "小兔", "locked": true },
+      { "id": "bear", "name": "小熊", "locked": true },
+      { "id": "fox", "name": "小狐狸", "locked": true },
+      { "id": "dog", "name": "小狗", "locked": true }
+    ],
+    "unlockRules": [
+      {
+        "id": "unlock_7day",
+        "type": "streak_days",
+        "days": 7,
+        "reward": { "kind": "unlock_pet_random", "pool": ["penguin", "rabbit", "bear"] }
+      },
+      {
+        "id": "unlock_14day",
+        "type": "streak_days",
+        "days": 14,
+        "reward": { "kind": "unlock_pet_random", "pool": ["fox", "dog"] }
+      }
+    ],
+    "stages": [
+      { "id": "egg", "name": "蛋", "minLevel": 1 },
+      { "id": "baby", "name": "幼崽", "minLevel": 3 },
+      { "id": "kid", "name": "小兽", "minLevel": 6 },
+      { "id": "teen", "name": "壮兽", "minLevel": 10 },
+      { "id": "adult", "name": "番茄王", "minLevel": 15 }
+    ],
+    "leveling": {
+      "maxLevel": 30,
+      "xpPerLevelBase": 120,
+      "xpPerLevelGrowth": 12
+    }
+  },
+  "economy": {
+    "currencyName": "金币",
+    "dailyCaps": {
+      "maxMinutesCounted": 240,
+      "maxXpPerDay": 400,
+      "maxCoinPerDay": 120
+    },
+    "antiAbuse": {
+      "minLogMinutes": 10,
+      "maxSingleLogMinutes": 120
+    }
+  },
+  "rewards": {
+    "sources": {
+      "timer": { "xpPerMinute": 1.0, "coinPerMinute": 0.2, "verified": 0 },
+      "proof": { "xpPerMinute": 1.2, "coinPerMinute": 0.25, "verified": 1 },
+      "manual": { "xpPerMinute": 0.8, "coinPerMinute": 0.15, "verified": 0 }
+    },
+    "basePerLog": { "xp": 5, "coin": 1 },
+    "streakRule": {
+      "type": "required_tasks_or_minutes_threshold",
+      "requiredThresholdMinutes": 25
+    },
+    "streakBonuses": [
+      { "days": 3, "xp": 30, "coin": 10, "lootbox": "small" },
+      { "days": 7, "xp": 80, "coin": 25, "lootbox": "medium" },
+      { "days": 14, "xp": 180, "coin": 60, "lootbox": "large" }
+    ]
+  },
+  "lootboxes": {
+    "small": { "coinRange": [5, 12], "dropPoolWeights": { "common": 85, "rare": 15, "epic": 0 } },
+    "medium": { "coinRange": [10, 25], "dropPoolWeights": { "common": 70, "rare": 25, "epic": 5 } },
+    "large": { "coinRange": [20, 50], "dropPoolWeights": { "common": 55, "rare": 35, "epic": 10 } }
+  },
+  "items": {
+    "common": [
+      { "id": "hat_leaf", "name": "番茄叶帽", "price": 30, "type": "hat" },
+      { "id": "scarf_red", "name": "小红围巾", "price": 35, "type": "scarf" }
+    ],
+    "rare": [
+      { "id": "room_poster", "name": "专注海报", "price": 80, "type": "decor" }
+    ],
+    "epic": [
+      { "id": "room_neon", "name": "番茄霓虹灯", "price": 160, "type": "decor" }
+    ]
+  }
+}

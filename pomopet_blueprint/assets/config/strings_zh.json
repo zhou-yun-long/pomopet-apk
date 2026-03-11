@@ -1,0 +1,28 @@
+{
+  "app": {
+    "name": "番茄小兽 Pomopet",
+    "common": {
+      "ok": "好的",
+      "cancel": "取消",
+      "confirm": "确认",
+      "back": "返回",
+      "save": "保存",
+      "delete": "删除",
+      "edit": "编辑",
+      "retry": "重试",
+      "later": "稍后",
+      "gotIt": "明白了"
+    }
+  },
+  "notify": {
+    "timerRunningTitle": "专注中 · {task}",
+    "timerRunningBody": "还剩 {mmss}",
+    "timerPausedTitle": "已暂停 · {task}",
+    "timerPausedBody": "点一下继续喂小兽",
+    "timerFinishedTitle": "番茄完成！",
+    "timerFinishedBody": "回到 Pomopet 记为完成领奖励",
+    "actionPause": "暂停",
+    "actionResume": "继续",
+    "actionStop": "结束"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "appId": "pomopet",
+  "configVersion": "0.1.0",
+  "minAppBuild": 1,
+  "generatedAt": "2026-03-10T16:30:00+08:00",
+  "files": {
+    "strings_zh.json": { "sha256": "" },
+    "events.json": { "sha256": "" },
+    "game_config.json": { "sha256": "" },
+    "timer_presets.json": { "sha256": "" }
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "version": "0.1.0",
+  "defaults": {
+    "presetId": "classic_25_5",
+    "sound": "tomato_pop",
+    "finishConfirm": true
+  },
+  "presets": [
+    {
+      "id": "classic_25_5",
+      "name": "经典 25/5",
+      "focusMinutes": 25,
+      "shortBreakMinutes": 5,
+      "longBreakMinutes": 15,
+      "longBreakEvery": 4,
+      "allowSkipBreak": true
+    },
+    {
+      "id": "deep_50_10",
+      "name": "深度 50/10",
+      "focusMinutes": 50,
+      "shortBreakMinutes": 10,
+      "longBreakMinutes": 20,
+      "longBreakEvery": 2,
+      "allowSkipBreak": true
+    },
+    {
+      "id": "flow_52_17",
+      "name": "Flow 52/17",
+      "focusMinutes": 52,
+      "shortBreakMinutes": 17,
+      "longBreakMinutes": 17,
+      "longBreakEvery": 1,
+      "allowSkipBreak": true
+    },
+    {
+      "id": "light_15_3",
+      "name": "轻量 15/3",
+      "focusMinutes": 15,
+      "shortBreakMinutes": 3,
+      "longBreakMinutes": 10,
+      "longBreakEvery": 4,
+      "allowSkipBreak": true
+    },
+    {
+      "id": "custom",
+      "name": "自定义",
+      "focusMinutes": 25,
+      "shortBreakMinutes": 5,
+      "longBreakMinutes": 15,
+      "longBreakEvery": 4,
+      "allowSkipBreak": true,
+      "editable": true,
+      "limits": {
+        "focusMin": 5,
+        "focusMax": 180,
+        "breakMin": 1,
+        "breakMax": 60
+      }
+    }
+  ]
+}
