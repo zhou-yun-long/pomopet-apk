@@ -46,11 +46,13 @@ jobs:
       - name: Flutter analyze
         working-directory: ./_app
         run: |
+          set -o pipefail
           flutter analyze | tee ../flutter-analyze.log
 
       - name: Build debug APK
         working-directory: ./_app
         run: |
+          set -o pipefail
           flutter build apk --debug -v | tee ../flutter-build-apk.log
 
       - name: Upload APK
