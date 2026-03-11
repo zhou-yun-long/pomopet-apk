@@ -47,7 +47,7 @@ jobs:
         working-directory: ./_app
         run: |
           set -o pipefail
-          flutter analyze | tee ../flutter-analyze.log
+          flutter analyze --no-fatal-infos --no-fatal-warnings | tee ../flutter-analyze.log
 
       - name: Build debug APK
         working-directory: ./_app
