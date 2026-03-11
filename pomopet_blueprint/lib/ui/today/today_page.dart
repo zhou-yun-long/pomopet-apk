@@ -116,7 +116,7 @@ class _TodayPageState extends State<TodayPage> {
                   child: StreamBuilder(
                     stream: widget.dao.watchVisibleTasks(),
                     builder: (context, snapshot) {
-                      final tasks = snapshot.data ?? const <TaskData>[];
+                      final tasks = snapshot.data ?? const <Task>[];
 
                       if (tasks.isEmpty) {
                         return _EmptyState(onAdd: () => _showCreateTaskDialog(context));
@@ -260,7 +260,7 @@ class _TodayPageState extends State<TodayPage> {
     );
   }
 
-  Future<void> _showEditTaskDialog(BuildContext context, TaskData task) async {
+  Future<void> _showEditTaskDialog(BuildContext context, Task task) async {
     final res = await showDialog<_TaskDraft>(
       context: context,
       builder: (_) => _TaskDialog(
@@ -287,7 +287,7 @@ String _hhmm(DateTime t) {
 }
 
 class _TaskCard extends StatelessWidget {
-  final TaskData task;
+  final Task task;
   final int todayMinutes;
   final VoidCallback onTogglePause;
   final VoidCallback onEdit;
