@@ -88,12 +88,15 @@ p = Path('android/app/build.gradle.kts')
 text = p.read_text(encoding='utf-8')
 
 if 'coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:' not in text:
-    text = re.sub(
-        r'dependencies\s*\{',
-        'dependencies {\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")',
-        text,
-        count=1,
-    )
+    if re.search(r'dependencies\s*\{', text):
+        text = re.sub(
+            r'dependencies\s*\{',
+            'dependencies {\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")',
+            text,
+            count=1,
+        )
+    else:
+        text += '\n\ndependencies {\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")\n}\n'
 
 if 'isCoreLibraryDesugaringEnabled = true' not in text and 'coreLibraryDesugaringEnabled = true' not in text:
     m = re.search(r'compileOptions\s*\{', text)
