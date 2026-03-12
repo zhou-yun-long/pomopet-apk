@@ -607,6 +607,13 @@ String _petMoodText(int streak, int level) {
   return streak > 0 ? '我在待命，别让这条连击断掉。' : '我在这儿等你开喂，先来一轮也行。';
 }
 
+String _dateOnly(DateTime t) {
+  final y = t.year.toString().padLeft(4, '0');
+  final m = t.month.toString().padLeft(2, '0');
+  final d = t.day.toString().padLeft(2, '0');
+  return '$y-$m-$d';
+}
+
 String _hhmm(DateTime t) {
   final h = t.hour.toString().padLeft(2, '0');
   final m = t.minute.toString().padLeft(2, '0');
