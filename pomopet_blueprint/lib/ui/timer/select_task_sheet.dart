@@ -33,7 +33,7 @@ class SelectTaskSheet extends StatelessWidget {
       child: FutureBuilder(
         future: dao.listVisibleTasks(),
         builder: (context, snapshot) {
-          final tasks = snapshot.data ?? const <TaskData>[];
+          final tasks = snapshot.data ?? const <Task>[];
 
           return Column(
             mainAxisSize: MainAxisSize.min,

@@ -1,9 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../../db/app_db.dart';
 import '../../db/dao.dart';
 import '../../services/reward_service.dart';
 import '../../utils/day_cutoff.dart';
+import '../dialogs/completion_reward_dialog.dart';
+import '../dialogs/level_up_dialog.dart';
 import '../sheets/log_completion_sheet.dart';
 import '../sheets/proof_log_sheet.dart';
 
@@ -116,7 +120,7 @@ class _TodayPageState extends State<TodayPage> {
                   child: StreamBuilder(
                     stream: widget.dao.watchVisibleTasks(),
                     builder: (context, snapshot) {
-                      final tasks = snapshot.data ?? const <TaskData>[];
+                      final tasks = snapshot.data ?? const <Task>[];
 
                       if (tasks.isEmpty) {
                         return _EmptyState(onAdd: () => _showCreateTaskDialog(context));
@@ -155,17 +159,11 @@ class _TodayPageState extends State<TodayPage> {
                                   }
                                   return Column(
                                     children: [
-                                      for (final r in recents)
-                                        Card(
-                                          child: ListTile(
-                                            leading: const Icon(Icons.check),
-                                            title: Text(r.taskName, style: const TextStyle(fontWeight: FontWeight.w900)),
-                                            subtitle: Text('${r.minutes} 分钟 · ${r.source}'),
-                                            trailing: Text(
-                                              _hhmm(r.createdAt),
-                                              style: Theme.of(context).textTheme.bodySmall,
-                                            ),
-                                          ),
+                                      for (var i = 0; i < recents.length; i++)
+                                        _GrowthFeedCard(
+                                          completion: recents[i],
+                                          isFirst: i == 0,
+                                          isLast: i == recents.length - 1,
                                         ),
                                     ],
                                   );
@@ -228,6 +226,10 @@ class _TodayPageState extends State<TodayPage> {
         '00:00';
     final date = logicalDate(DateTime.now(), cutoff: cutoff);
 
+    final before = await (widget.dao.db.select(widget.dao.db.users)
+          ..where((u) => u.id.equals(widget.userId)))
+        .getSingle();
+
     final reward = await logCompletionTx(
       db: widget.dao.db,
       rewards: RewardService(),
@@ -241,10 +243,32 @@ class _TodayPageState extends State<TodayPage> {
       dao: widget.dao,
     );
 
+    final after = await (widget.dao.db.select(widget.dao.db.users)
+          ..where((u) => u.id.equals(widget.userId)))
+        .getSingle();
+
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('已记录：+${reward.xp} XP  +${reward.coin} 金币')),
+    await showDialog(
+      context: context,
+      builder: (_) => CompletionRewardDialog(
+        source: source,
+        minutes: minutes!,
+        xp: reward.xp,
+        coin: reward.coin,
+        streak: after.streak,
+        leveledUp: after.level > before.level,
+        newLevel: after.level,
+        attachmentPath: attachmentPath,
+      ),
     );
+
+    if (!context.mounted) return;
+    if (after.level > before.level) {
+      await showDialog(
+        context: context,
+        builder: (_) => LevelUpDialog(newLevel: after.level),
+      );
+    }
   }
 
   Future<void> _showCreateTaskDialog(BuildContext context) async {
@@ -260,7 +284,7 @@ class _TodayPageState extends State<TodayPage> {
     );
   }
 
-  Future<void> _showEditTaskDialog(BuildContext context, TaskData task) async {
+  Future<void> _showEditTaskDialog(BuildContext context, Task task) async {
     final res = await showDialog<_TaskDraft>(
       context: context,
       builder: (_) => _TaskDialog(
@@ -286,8 +310,170 @@ String _hhmm(DateTime t) {
   return '$h:$m';
 }
 
+class _GrowthFeedCard extends StatelessWidget {
+  final RecentCompletion completion;
+  final bool isFirst;
+  final bool isLast;
+
+  const _GrowthFeedCard({
+    required this.completion,
+    required this.isFirst,
+    required this.isLast,
+  });
+
+  bool get _hasPreview => completion.attachmentPath != null && completion.attachmentPath!.isNotEmpty;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = _sourceAccent(context, completion.source);
+    final title = _growthTitle(completion);
+    final desc = _growthDescription(completion);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 28,
+            child: Column(
+              children: [
+                if (!isFirst)
+                  Container(width: 2, height: 10, color: accent.withValues(alpha: 0.25)),
+                Container(
+                  width: 28,
+                  height: 28,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: accent.withValues(alpha: 0.14),
+                  ),
+                  child: Text(_sourceEmoji(completion.source), style: const TextStyle(fontSize: 14)),
+                ),
+                if (!isLast)
+                  Container(width: 2, height: _hasPreview ? 180 : 116, color: accent.withValues(alpha: 0.25)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Card(
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (_hasPreview)
+                    SizedBox(
+                      height: 148,
+                      width: double.infinity,
+                      child: Image.file(
+                        File(completion.attachmentPath!),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+                          alignment: Alignment.center,
+                          child: Text('📸 ${completion.taskName}', style: const TextStyle(fontWeight: FontWeight.w900)),
+                        ),
+                      ),
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(title, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(_hhmm(completion.createdAt), style: Theme.of(context).textTheme.bodySmall),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(desc),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _FeedChip(label: _sourceLabel(completion.source)),
+                            _FeedChip(label: '${completion.minutes} 分钟'),
+                            if (completion.source == 'proof') const _FeedChip(label: '已凭证', highlighted: true),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FeedChip extends StatelessWidget {
+  final String label;
+  final bool highlighted;
+
+  const _FeedChip({required this.label, this.highlighted = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: highlighted
+            ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.12)
+            : Colors.black.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+    );
+  }
+}
+
+Color _sourceAccent(BuildContext context, String source) {
+  switch (source) {
+    case 'proof':
+      return const Color(0xFFE0A800);
+    case 'manual':
+      return Theme.of(context).colorScheme.tertiary;
+    case 'timer':
+    default:
+      return Theme.of(context).colorScheme.primary;
+  }
+}
+
+String _growthTitle(RecentCompletion completion) {
+  switch (completion.source) {
+    case 'proof':
+      return '你完成了「${completion.taskName}」，还顺手交了凭证';
+    case 'manual':
+      return '你把「${completion.taskName}」认真补录进今天的成长里';
+    case 'timer':
+    default:
+      return '你完成了一轮「${completion.taskName}」';
+  }
+}
+
+String _growthDescription(RecentCompletion completion) {
+  switch (completion.source) {
+    case 'proof':
+      return '这轮一共 ${completion.minutes} 分钟，小兽不只吃到了进度，还收到了明确凭证。';
+    case 'manual':
+      return '这次补录了 ${completion.minutes} 分钟，真实完成没有被白白漏掉。';
+    case 'timer':
+    default:
+      return '这轮番茄推进了 ${completion.minutes} 分钟，小兽已经把它记成一次正经喂养。';
+  }
+}
+
 class _TaskCard extends StatelessWidget {
-  final TaskData task;
+  final Task task;
   final int todayMinutes;
   final VoidCallback onTogglePause;
   final VoidCallback onEdit;

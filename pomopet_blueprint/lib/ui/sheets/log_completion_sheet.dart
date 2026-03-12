@@ -6,7 +6,13 @@ import '../../db/dao.dart';
 class LogCompletionResult {
   final int? taskId;
   final int minutes;
-  LogCompletionResult({required this.taskId, required this.minutes});
+  final bool withProof;
+
+  LogCompletionResult({
+    required this.taskId,
+    required this.minutes,
+    this.withProof = false,
+  });
 }
 
 /// Bottom sheet for confirming a completion log.
@@ -69,7 +75,7 @@ class _LogCompletionSheetState extends State<LogCompletionSheet> {
       child: FutureBuilder(
         future: widget.dao.listVisibleTasks(),
         builder: (context, snapshot) {
-          final tasks = snapshot.data ?? const <TaskData>[];
+          final tasks = snapshot.data ?? const <Task>[];
           _taskId ??= tasks.isNotEmpty ? tasks.first.id : null;
 
           return Column(
@@ -93,13 +99,42 @@ class _LogCompletionSheetState extends State<LogCompletionSheet> {
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(labelText: '多少分钟？'),
               ),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('入账方式', style: TextStyle(fontWeight: FontWeight.w900)),
+                    SizedBox(height: 4),
+                    Text('直接记完成，或者顺手补一张截图凭证。'),
+                  ],
+                ),
+              ),
               const SizedBox(height: 14),
               FilledButton(
                 onPressed: () {
                   final minutes = int.tryParse(_minutes.text.trim()) ?? widget.defaultMinutes;
-                  Navigator.of(context).pop(LogCompletionResult(taskId: _taskId, minutes: minutes));
+                  Navigator.of(context).pop(
+                    LogCompletionResult(taskId: _taskId, minutes: minutes),
+                  );
                 },
-                child: const Text('确认入账'),
+                child: const Text('直接入账'),
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: () {
+                  final minutes = int.tryParse(_minutes.text.trim()) ?? widget.defaultMinutes;
+                  Navigator.of(context).pop(
+                    LogCompletionResult(taskId: _taskId, minutes: minutes, withProof: true),
+                  );
+                },
+                icon: const Icon(Icons.photo_camera_back_outlined),
+                label: const Text('带截图入账'),
               ),
               const SizedBox(height: 8),
             ],

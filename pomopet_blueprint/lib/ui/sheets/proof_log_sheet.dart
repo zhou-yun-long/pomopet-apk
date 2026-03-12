@@ -81,7 +81,7 @@ class _ProofLogSheetState extends State<ProofLogSheet> {
       child: FutureBuilder(
         future: widget.dao.listVisibleTasks(),
         builder: (context, snapshot) {
-          final tasks = snapshot.data ?? const <TaskData>[];
+          final tasks = snapshot.data ?? const <Task>[];
           _taskId ??= tasks.isNotEmpty ? tasks.first.id : null;
 
           return Column(
@@ -90,6 +90,22 @@ class _ProofLogSheetState extends State<ProofLogSheet> {
             children: [
               Text(widget.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
               const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('凭证说明', style: TextStyle(fontWeight: FontWeight.w900)),
+                    SizedBox(height: 4),
+                    Text('传一张完成截图，这次记录会被标成「已凭证」。'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
               FilledButton.tonalIcon(
                 onPressed: _pick,
                 icon: const Icon(Icons.photo_library_outlined),
@@ -97,13 +113,28 @@ class _ProofLogSheetState extends State<ProofLogSheet> {
               ),
               const SizedBox(height: 10),
               if (_picked != null)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Image.file(
-                    File(_picked!.path),
-                    height: 160,
-                    fit: BoxFit.cover,
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.file(
+                        File(_picked!.path),
+                        height: 160,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: const Text('本次完成将显示为：已凭证', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+                    ),
+                  ],
                 )
               else
                 const Text('还没有选择截图。'),

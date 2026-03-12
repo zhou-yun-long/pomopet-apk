@@ -4,8 +4,10 @@ import '../../theme/pomopet_theme.dart';
 import '../../timer/timer_service.dart';
 import '../../db/dao.dart';
 import '../../services/reward_service.dart';
+import '../dialogs/completion_reward_dialog.dart';
 import '../dialogs/level_up_dialog.dart';
 import '../sheets/log_completion_sheet.dart';
+import '../sheets/proof_log_sheet.dart';
 import 'select_task_sheet.dart';
 import '../../utils/day_cutoff.dart';
 import 'tomato_progress_ring.dart';
@@ -73,7 +75,7 @@ class _TimerPageState extends State<TimerPage> {
                               final res = await LogCompletionSheet.show(
                                 context,
                                 dao: widget.dao,
-                                title: '番茄完成！要入账吗？',
+                                title: '番茄完成！怎么记这轮？',
                                 defaultMinutes: s.plannedMinutes,
                               );
                               if (res == null) return;
@@ -84,6 +86,23 @@ class _TimerPageState extends State<TimerPage> {
                                   const SnackBar(content: Text('请先选择一个任务再入账')),
                                 );
                                 return;
+                              }
+
+                              String source = 'timer';
+                              String? attachmentPath;
+                              var minutes = res.minutes;
+
+                              if (res.withProof) {
+                                final proof = await ProofLogSheet.show(
+                                  context,
+                                  dao: widget.dao,
+                                  title: '给这轮番茄补一张截图凭证',
+                                  defaultMinutes: res.minutes,
+                                );
+                                if (proof == null) return;
+                                source = 'proof';
+                                minutes = proof.minutes;
+                                attachmentPath = proof.attachmentPath;
                               }
 
                               final cutoff = await widget.dao.getSetting('dayCutoff') ??
@@ -101,8 +120,9 @@ class _TimerPageState extends State<TimerPage> {
                                 userId: widget.userId,
                                 taskId: res.taskId!,
                                 dateYYYYMMDD: date,
-                                minutes: res.minutes,
-                                source: 'timer',
+                                minutes: minutes,
+                                source: source,
+                                attachmentPath: attachmentPath,
                                 dao: widget.dao,
                               );
 
@@ -111,10 +131,22 @@ class _TimerPageState extends State<TimerPage> {
                                   .getSingle();
 
                               if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('已入账：+${reward.xp} XP  +${reward.coin} 金币')),
+
+                              await showDialog(
+                                context: context,
+                                builder: (_) => CompletionRewardDialog(
+                                  source: source,
+                                  minutes: minutes,
+                                  xp: reward.xp,
+                                  coin: reward.coin,
+                                  streak: after.streak,
+                                  leveledUp: after.level > before.level,
+                                  newLevel: after.level,
+                                  attachmentPath: attachmentPath,
+                                ),
                               );
 
+                              if (!context.mounted) return;
                               if (after.level > before.level) {
                                 await showDialog(
                                   context: context,
@@ -126,7 +158,9 @@ class _TimerPageState extends State<TimerPage> {
                           ),
                         const SizedBox(height: 6),
                         Text(
-                          s?.status == 'paused' ? '已暂停 · 点一下继续喂小兽' : '专注中 · 番茄味更强',
+                          s?.status == 'finished'
+                              ? '庆祝中 · 直接入账，或者补一张截图凭证'
+                              : (s?.status == 'paused' ? '休息中 · 点一下继续，把这轮接上' : '专注中 · 小兽正在陪跑'),
                           style: const TextStyle(color: PomopetTheme.subText),
                         )
                       ],

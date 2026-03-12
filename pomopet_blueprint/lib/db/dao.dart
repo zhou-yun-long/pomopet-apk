@@ -192,14 +192,14 @@ class PomopetDao {
   // Tasks
   // -------------------
 
-  Stream<List<TaskData>> watchVisibleTasks() {
+  Stream<List<Task>> watchVisibleTasks() {
     return (db.select(db.tasks)
           ..where((t) => t.status.equals('active') | t.status.equals('paused'))
           ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
         .watch();
   }
 
-  Future<List<TaskData>> listVisibleTasks() {
+  Future<List<Task>> listVisibleTasks() {
     return (db.select(db.tasks)
           ..where((t) => t.status.equals('active') | t.status.equals('paused'))
           ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
@@ -393,6 +393,7 @@ class PomopetDao {
             taskName: nameById[l.taskId] ?? '任务#${l.taskId}',
             minutes: l.minutes,
             source: l.source,
+            attachmentPath: l.attachmentPath,
             createdAt: l.createdAt,
           ),
         )
@@ -419,6 +420,7 @@ class RecentCompletion {
   final String taskName;
   final int minutes;
   final String source;
+  final String? attachmentPath;
   final DateTime createdAt;
   RecentCompletion({
     required this.id,
@@ -426,6 +428,7 @@ class RecentCompletion {
     required this.taskName,
     required this.minutes,
     required this.source,
+    required this.attachmentPath,
     required this.createdAt,
   });
 }

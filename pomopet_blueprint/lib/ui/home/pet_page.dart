@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../db/app_db.dart';
 import '../../db/dao.dart';
+import '../../services/reward_service.dart';
 
 class PetPage extends StatelessWidget {
   final PomopetDao dao;
@@ -100,9 +101,176 @@ class PetPage extends StatelessWidget {
                                 : '当前装扮：${_inventoryDisplayName(gameConfig, equipped.itemId)}',
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
+                          const SizedBox(height: 12),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.04),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _petStateLabel(user.streak, user.level),
+                                  style: const TextStyle(fontWeight: FontWeight.w900),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(_petMoodText(user.streak, user.level)),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),
+                  ),
+                  const SizedBox(height: 12),
+                  FutureBuilder<List<RecentCompletion>>(
+                    future: dao.listRecentCompletions(
+                      dateYYYYMMDD: _dateOnly(DateTime.now()),
+                      limit: 24,
+                    ),
+                    builder: (context, recentSnap) {
+                      final recents = recentSnap.data ?? const <RecentCompletion>[];
+                      final recent = recents.isNotEmpty ? recents.first : null;
+                      final proofCount = recents.where((e) => e.source == 'proof').length;
+                      final totalFeeds = recents.length;
+                      final lastFeedTime = recent == null ? null : _hhmm(recent.createdAt);
+                      final growth = _todayGrowthSummary(recents, gameConfig);
+                      final xpToNext = _xpToNextLevel(user.level, user.xp, gameConfig);
+
+                      return Column(
+                        children: [
+                          Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('今日状态面板', style: TextStyle(fontWeight: FontWeight.w900)),
+                                  const SizedBox(height: 10),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: _PetStatusMiniCard(
+                                          emoji: '🍽️',
+                                          label: '今日喂养',
+                                          value: '$totalFeeds 次',
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: _PetStatusMiniCard(
+                                          emoji: '📸',
+                                          label: '凭证次数',
+                                          value: '$proofCount 次',
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: _PetStatusMiniCard(
+                                          emoji: '🕒',
+                                          label: '最后喂养',
+                                          value: lastFeedTime ?? '--:--',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    totalFeeds == 0
+                                        ? '今天还没开喂，来一轮番茄，我就开始长。'
+                                        : proofCount > 0
+                                            ? '今天已经认真喂了 $totalFeeds 次，其中 $proofCount 次还带了凭证。'
+                                            : '今天已经喂了 $totalFeeds 次，再来一轮我还能继续涨状态。',
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('今日成长结果', style: TextStyle(fontWeight: FontWeight.w900)),
+                                  const SizedBox(height: 10),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: _PetStatusMiniCard(
+                                          emoji: '⭐',
+                                          label: '今日 XP',
+                                          value: '+${growth.xp}',
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: _PetStatusMiniCard(
+                                          emoji: '🪙',
+                                          label: '今日金币',
+                                          value: '+${growth.coin}',
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: _PetStatusMiniCard(
+                                          emoji: '⏱️',
+                                          label: '今日分钟',
+                                          value: '${growth.minutes}',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    growth.minutes == 0
+                                        ? '今天还没把成长值推起来，先喂一轮就会动。'
+                                        : xpToNext <= 0
+                                            ? '这一级已经吃满了，继续喂就准备冲下一阶段。'
+                                            : '按现在进度，再拿 $xpToNext XP 就能更靠近下一阶段。',
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: recent == null
+                                  ? const Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('最近一次喂养', style: TextStyle(fontWeight: FontWeight.w900)),
+                                        SizedBox(height: 6),
+                                        Text('今天还没喂我。来一轮番茄，我就会记住。'),
+                                      ],
+                                    )
+                                  : Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text('最近一次喂养', style: TextStyle(fontWeight: FontWeight.w900)),
+                                        const SizedBox(height: 6),
+                                        Text('${recent.taskName} · ${recent.minutes} 分钟', style: const TextStyle(fontWeight: FontWeight.w800)),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          recent.source == 'proof'
+                                              ? '这次是凭证完成，我已经认真收下了。'
+                                              : recent.source == 'timer'
+                                                  ? '这轮是正经番茄喂养，我记得很清楚。'
+                                                  : '这次是补录完成，我也算进成长里了。',
+                                        ),
+                                      ],
+                                    ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -232,6 +400,38 @@ class PetPage extends StatelessWidget {
   }
 }
 
+class _PetStatusMiniCard extends StatelessWidget {
+  final String emoji;
+  final String label;
+  final String value;
+
+  const _PetStatusMiniCard({
+    required this.emoji,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 20)),
+          const SizedBox(height: 6),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w900)),
+          const SizedBox(height: 2),
+          Text(label, style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center),
+        ],
+      ),
+    );
+  }
+}
+
 class _StatCard extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -298,6 +498,59 @@ Map<String, dynamic>? _findNextStage(Map<String, dynamic> gameConfig, int level)
   return null;
 }
 
+class _TodayGrowthSummary {
+  final int xp;
+  final int coin;
+  final int minutes;
+
+  const _TodayGrowthSummary({
+    required this.xp,
+    required this.coin,
+    required this.minutes,
+  });
+}
+
+_TodayGrowthSummary _todayGrowthSummary(
+  List<RecentCompletion> recents,
+  Map<String, dynamic> gameConfig,
+) {
+  final rewards = RewardService();
+  var xp = 0;
+  var coin = 0;
+  var minutes = 0;
+
+  for (final item in recents) {
+    final reward = rewards.calc(
+      minutes: item.minutes,
+      source: item.source,
+      game: gameConfig,
+    );
+    xp += reward.xp;
+    coin += reward.coin;
+    minutes += item.minutes;
+  }
+
+  return _TodayGrowthSummary(xp: xp, coin: coin, minutes: minutes);
+}
+
+int _xpToNextLevel(int level, int xp, Map<String, dynamic> gameConfig) {
+  final leveling = (gameConfig['pet']?['leveling'] as Map?)?.cast<String, dynamic>() ?? const {};
+  final maxLevel = (leveling['maxLevel'] as num?)?.toInt() ?? 999;
+  final base = (leveling['xpPerLevelBase'] as num?)?.toInt() ?? 120;
+  final growth = (leveling['xpPerLevelGrowth'] as num?)?.toInt() ?? 12;
+
+  if (level >= maxLevel) return 0;
+
+  var accumulated = 0;
+  for (var lv = 1; lv < level; lv++) {
+    accumulated += base + ((lv - 1) * growth);
+  }
+
+  final needThisLevel = base + ((level - 1) * growth);
+  final current = (xp - accumulated).clamp(0, needThisLevel);
+  return needThisLevel - current;
+}
+
 double _levelProgress(int level, int xp, Map<String, dynamic> gameConfig) {
   final leveling = (gameConfig['pet']?['leveling'] as Map?)?.cast<String, dynamic>() ?? const {};
   final base = (leveling['xpPerLevelBase'] as num?)?.toInt() ?? 120;
@@ -338,6 +591,26 @@ List<Map<String, dynamic>> _availableSpecies(Map<String, dynamic> gameConfig, in
   }
 
   return species.where((s) => unlocked.contains(s['id'].toString())).toList();
+}
+
+String _petStateLabel(int streak, int level) {
+  if (streak >= 7) return '庆祝态 · 最近喂得很顺';
+  if (streak >= 3) return '专注态 · 节奏已经起来了';
+  if (level <= 2) return '待机态 · 还在成长中';
+  return '休息态 · 缓一下继续长';
+}
+
+String _petMoodText(int streak, int level) {
+  if (streak >= 7) return '最近这波喂得真不错，我现在就是开心到想庆祝。';
+  if (streak >= 3) return '状态已经起来了，你继续推，我继续陪跑。';
+  if (level <= 2) return '我还在长身体，但已经准备好跟你一起升级了。';
+  return streak > 0 ? '我在待命，别让这条连击断掉。' : '我在这儿等你开喂，先来一轮也行。';
+}
+
+String _hhmm(DateTime t) {
+  final h = t.hour.toString().padLeft(2, '0');
+  final m = t.minute.toString().padLeft(2, '0');
+  return '$h:$m';
 }
 
 String _petEmoji(String? petId) {
