@@ -436,6 +436,30 @@ class _FeedChip extends StatelessWidget {
   }
 }
 
+String _sourceEmoji(String source) {
+  switch (source) {
+    case 'proof':
+      return '📸';
+    case 'manual':
+      return '📝';
+    case 'timer':
+    default:
+      return '🍅';
+  }
+}
+
+String _sourceLabel(String source) {
+  switch (source) {
+    case 'proof':
+      return '凭证完成';
+    case 'manual':
+      return '补录完成';
+    case 'timer':
+    default:
+      return '番茄完成';
+  }
+}
+
 Color _sourceAccent(BuildContext context, String source) {
   switch (source) {
     case 'proof':
